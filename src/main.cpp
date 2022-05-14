@@ -1,6 +1,7 @@
 #include<iostream>
 #include<GL/glut.h>
-#include<string.h>
+#include<GL/freeglut.h>
+#include<math.h>
 
 using namespace std;
 
@@ -29,7 +30,7 @@ class TicTacToeBoard {
         if (x<llx || y<lly || x>(llx+w) || y>(lly+h)) {
             return -1;
         }
-    
+
         int i, j;
         if (x<=((w/3)+llx)) {
             j=0;
@@ -48,18 +49,18 @@ class TicTacToeBoard {
         }
 
         if (i>=3 || j>=3) {
-            cout << "ArrayIndexOutOfBound: put function" << endl;
+            //cout << "ArrayIndexOutOfBound: put function" << endl;
             return -1;
         }
         if (board[i][j]!='_') {
-            cout << "Illegal Placement" << endl;
+            //cout << "Illegal Placement" << endl;
             return -1;
         }
         board[i][j]=c;
         filled++;
         return filled;
     }
-    
+
     void print() {
         for (int i=0; i<3; i++) {
             for (int j=0; j<3; j++) {
@@ -71,6 +72,7 @@ class TicTacToeBoard {
 
     void drawX(int mx, int my, int w, int h) {
         glColor3f(1, 0.18, 0.38);
+        //glColor3f(0.93, 0.93, 0.93);
         glLineWidth(30);
         glBegin(GL_LINES);
         glVertex2f(mx-w/2, my-h/2);
@@ -83,8 +85,17 @@ class TicTacToeBoard {
         glEnd();
     }
 
-    void drawO() {
-
+    void drawO(int ori_x, int ori_y, int radius) {
+        glColor3f(0.3, 0.85, 0.83);
+        //glColor3f(0.93, 0.93, 0.93);
+        glBegin(GL_POINTS);
+        for (int i = 0; i <= 300; i++) {
+            double angle = 2 * 3.14 * i / 300;
+            double x = cos(angle) * radius;
+            double y = sin(angle) * radius;
+            glVertex2d(ori_x + x, ori_y + y);
+        }
+        glEnd();
     }
 
     void draw() {
@@ -118,7 +129,7 @@ class TicTacToeBoard {
                     drawX(x+llx, y+lly, w/3-40, h/3-40);
                 }
                 else if (board[i][j]=='O') {
-                    drawO();
+                    drawO(x+llx, y+lly, (w/3-40)/2);
                 }
                 x+=(w/3);
             }
@@ -126,12 +137,21 @@ class TicTacToeBoard {
             y-=(h/3);
         }
     }
+
+    void reset() {
+        for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+                board[i][j]='_';
+            }
+        }
+        filled=0;
+    }
 };
 
 class Player {
     private:
     char sign;
-    
+
     public:
     Player(char s) {
         sign=s;
@@ -143,23 +163,20 @@ class Player {
 };
 
 class Game {
-    private:
+    public:
     TicTacToeBoard board=TicTacToeBoard(250, 250, 500, 500);
     Player p1=Player('X');
     Player p2=Player('O');
     bool turn_p1=true, p1_won=false, p2_won=false;
 
-    public:
     void drawString(void *font,const char s[], int x, int y) {
-	    glRasterPos2f(x,y);
-	    for(int i=0;i<strlen(s);i++) {
-		    glutBitmapCharacter(font,s[i]);
-	    }
+    	glRasterPos2i(x, y);
+    	glutBitmapString(font, (unsigned char*)s);
     }
 
     bool checkWinner() {
 	    int i, j;
-	    // horizontal check
+	    // horizontal checkN_24, (unsigned char*
 	    for(i=0;i<3;i++) {
 		    for(j=1;j<3;j++) {
                 if(board.board[i][0]!='_' && board.board[i][0]==board.board[i][j]) {
@@ -191,9 +208,23 @@ class Game {
         }
 	    return false;
     }
-    
+
+    bool checkDraw() {
+    	for (int i=0; i<3; i++) {
+    		for (int j=0; j<3; j++) {
+    			if (board.board[i][j]=='_') {
+    				return false;
+    			}
+    		}
+    	}
+    	return true;
+    }
+
     void clickEvent(int x, int y) {
         // check inside tic tac toe board
+    	if (p1_won || p2_won) {
+    		return;
+    	}
         int fill=-1;
         if (turn_p1) {
             fill=p1.put(&board, x, y);
@@ -206,45 +237,48 @@ class Game {
                 return;
             }
         }
-        board.print();
-        glutPostRedisplay();
-        if (checkWinner()==true) {
-            if (turn_p1==true) {
-                // p1 won
-                p1_won=true;
-            }
-            else {
-                p2_won=true;
-            }
-            gameOver();
-            return;
-        }
         if (turn_p1) {
-            turn_p1=false;
+        	turn_p1=false;
         } else {
             turn_p1=true;
         }
-        if (fill==9) {
-            p1_won=true;
-            p2_won=true;
-            gameOver();
-        }
+        glutPostRedisplay();
+        board.print();
     }
 
     void gameOver() {
        if (p1_won && p2_won) {
-           cout << "tie" << endl;
+           //cout << "tie" << endl;
+    	   glColor3f(0.93, 0.93, 0.93);
+           drawString(GLUT_BITMAP_HELVETICA_18, "       DRAW :(", 425, 770);
        }
        else if (p1_won) {
-           cout << "p1 won" << endl;
+           //cout << "p1 won" << endl;
+           glColor3f(0.3, 0.85, 0.83);
+           drawString(GLUT_BITMAP_HELVETICA_18, "PLAYER O WON!!", 425, 770);
        }
        else if(p2_won) {
-           cout << "p2 won" << endl;
+           //cout << "p2 won" << endl;
+           glColor3f(1, 0.18, 0.38);
+           drawString(GLUT_BITMAP_HELVETICA_18, "PLAYER X WON!!", 425, 770);
        }
+       glutPostRedisplay();
     }
 
     void draw() {
-        drawString(GLUT_BITMAP_TIMES_ROMAN_24, "Tic Tac Toe", 100, 30);
+    	glColor3f(0.40, 0.40, 0.40);
+        drawString(GLUT_BITMAP_HELVETICA_18, "Made in Thapar", 425, 30);
+        if (p1_won || p2_won) {
+        	gameOver();
+        }
+        else if (turn_p1) {
+        	glColor3f(0.3, 0.85, 0.83);
+        	drawString(GLUT_BITMAP_HELVETICA_18, "PLAYER X TURN", 425, 770);
+        }
+        else {
+        	glColor3f(1, 0.18, 0.38);
+        	drawString(GLUT_BITMAP_HELVETICA_18, "PLAYER O TURN", 425, 770);
+        }
         board.draw();
     }
 };
@@ -253,17 +287,33 @@ Game game=Game();
 
 void display() {
     glClearColor(0.22, 0.24, 0.27, 1);
+    //glClearColor(0.0, 0.0, 0.0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     game.draw();
     glFlush();
+
+    if (game.checkWinner()==true) {
+    	if (game.turn_p1==true) {
+    		// p1 won
+            game.p1_won=true;
+        }
+        else {
+        	game.p2_won=true;
+        }
+        return;
+    }
+    if (game.checkDraw()==true) {
+    	game.p1_won=true;
+        game.p2_won=true;
+    }
 }
 
 void init(int x, int y, int w, int h, int pt_size, int line_width) {
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	glutInitWindowSize(w, h);
 	glutInitWindowPosition(x, y);
-	glutCreateWindow("Computer Graphics");
-    
+	glutCreateWindow("Tic Tac Toe Game");
+
     glClearColor(1, 1, 1, 1);
 	glColor3f(1.0, 0.0, 0.0);
 	glPointSize(pt_size);
@@ -280,13 +330,33 @@ void onMouseClick(int button,int state,int x,int y) {
     }
 }
 
+void onKeyPress(unsigned char key, int x, int y){
+    switch(key){
+		case 'y':
+			if(game.p1_won || game.p2_won)
+			{
+				game.board.reset();
+			}
+			break;
+		case 'n':
+			if(game.p1_won || game.p2_won)
+				exit(0);
+			break;
+		case 27:
+			exit(0);
+	}
+}
+
 int main(int argc, char **argv) {
     glutInit(&argc, argv);
 
     init(0, 0, 1000, 1000, 5, 8);
 	glutDisplayFunc(display);
     glutMouseFunc(onMouseClick);
+	glutKeyboardFunc(onKeyPress);
+    glutIdleFunc(display);
     //game.play();
 	glutMainLoop();
 	return 0;
 }
+
