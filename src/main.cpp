@@ -272,14 +272,22 @@ class Game {
         	gameOver();
         }
         else if (turn_p1) {
-        	glColor3f(0.3, 0.85, 0.83);
+        	glColor3f(1, 0.18, 0.38);
         	drawString(GLUT_BITMAP_HELVETICA_18, "PLAYER X TURN", 425, 770);
         }
         else {
-        	glColor3f(1, 0.18, 0.38);
+        	glColor3f(0.3, 0.85, 0.83);
         	drawString(GLUT_BITMAP_HELVETICA_18, "PLAYER O TURN", 425, 770);
         }
         board.draw();
+    }
+    
+    void reset() {
+    	turn_p1=true;
+    	p1_won=false;
+    	p2_won=false;
+    	board.reset();
+        draw();
     }
 };
 
@@ -335,7 +343,7 @@ void onKeyPress(unsigned char key, int x, int y){
 		case 'y':
 			if(game.p1_won || game.p2_won)
 			{
-				game.board.reset();
+				game.reset();
 			}
 			break;
 		case 'n':
